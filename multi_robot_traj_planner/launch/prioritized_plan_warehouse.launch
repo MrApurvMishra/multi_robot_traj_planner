@@ -17,8 +17,8 @@
   <arg name="runsim"                default="true"/>
   <arg name="log"                   default="false"/>
 
-  <arg name="mission"               default="mission_32agents_warehouse.json"/>
-  <arg name="replay"                default="true"/>
+  <arg name="mission"               default="mission_16agents_warehouse.json"/>
+  <arg name="replay"                default="false"/>
   <arg name="replay_map"            default="p_warehouse2.bt"/>
   
   <!-- Environment -->
@@ -80,7 +80,7 @@
     <param name="color/a"                    value="0.2" />
   </node>
 
-  <node pkg="multi_robot_traj_planner" type="warehouse_map_generator" name="warehouse_map_generator" unless="$(arg replay)">
+  <node pkg="multi_robot_traj_planner" type="warehouse_map_generator" name="warehouse_map_generator" unless="$(arg replay)" output="screen">
     <param name="mission"                    value="$(find multi_robot_traj_planner)/missions/$(arg mission)" />
 
     <param name="world/x_min"                value="$(arg world_x_min)" />
