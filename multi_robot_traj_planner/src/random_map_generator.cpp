@@ -87,7 +87,7 @@ void RandomMapGenerate(const SwarmPlanning::Mission& mission)
 
         int widNum = ceil(w/resolution);
 
-        for(int r = -widNum/2.0; r < widNum/2.0; r ++ ) {
+        for(int r = -widNum/2.0; r < widNum/2.0; r++ ) {
             for (int s = -widNum / 2.0; s < widNum / 2.0; s++) {
                 h = rand_h(eng);
                 int heiNum = ceil(h / resolution);
@@ -136,10 +136,10 @@ int main (int argc, char** argv) {
     n.param<double>("world/z_max", z_max, 2.5);
     n.param<double>("world/margin", margin, 1.5);
 
-    n.param<int>("world/obs_num", obs_num,  6);
+    n.param<int>("world/obs_num", obs_num,  12);
     n.param<double>("world/resolution",  resolution, 0.1);
-    n.param<double>("world/r_min", r_min,   0.3);
-    n.param<double>("world/r_max", r_max,   0.8);
+    n.param<double>("world/r_min", r_min,   0.5);
+    n.param<double>("world/r_max", r_max,   1.5);
     n.param<double>("world/h_min", h_min,   1.0);
     n.param<double>("world/h_max", h_max,   2.5);
 
