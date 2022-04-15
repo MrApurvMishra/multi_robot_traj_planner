@@ -20,33 +20,53 @@
 
 bool has_octomap = false;
 bool has_path = false;
+
+/*  A shared pointer can be used to point to member objects.
+    Octomap used to implement a 3D occupancy grid,
+    based on OcTree which is a tree data structure
+    which allows each node to have atmost 8 children.   */
+//  A shared pointer decalred to an octomap object
 std::shared_ptr<octomap::OcTree> octree_obj;
 
-void octomapCallback(const octomap_msgs::Octomap& octomap_msg)
-{
+/*  callback function when we subscribe to the '/octomap_full' topic
+    which contains all the points making up the 3D occupancy grid   */
+void octomapCallback(const octomap_msgs::Octomap& octomap_msg) {
+    
+    // check if Octomap exists - return if it does
     if(has_octomap)
         return;
 
+    // create Octomap, otherwise
     octree_obj.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
 
     has_octomap = true;
 }
 
+// main function
 int main(int argc, char* argv[]) {
 
+    // initialize node for trajectory planner
     ros::init (argc, argv, "swarm_traj_planner_rbp");
     ros::NodeHandle nh( "~" );
+
+    // define subscriber and topic for the Octomap
     ros::Subscriber octomap_sub = nh.subscribe( "/octomap_full", 1, octomapCallback );
 
     
-    // Mission
+    // defined in 'mission.hpp' in 'include' folder
+    // mostly, checks for the mission file, i.e. a JSON with agents' definition
     SwarmPlanning::Mission mission;
     if(!mission.setMission(nh)){
         return -1;
     }
 
-    int qn=mission.qn;
+    // the number of robots
+    int qn = mission.qn;
+    
+    // vector for waypoints' arrays for publisher
     way_point_pub.resize(qn);
+
+    // create waypoints' publisher for each robot
     for(int qi = 0; qi < qn; qi++){
             std::string robot_name = "/robot" + std::to_string(qi+1);
             way_point_pub[qi] = nh.advertise<nav_msgs::Path>(robot_name+"/mpc_predict_all", 1);
