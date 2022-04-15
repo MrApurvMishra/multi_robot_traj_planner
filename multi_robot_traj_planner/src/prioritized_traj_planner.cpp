@@ -25,7 +25,7 @@ bool has_path = false;
     Octomap used to implement a 3D occupancy grid,
     based on OcTree which is a tree data structure
     which allows each node to have atmost 8 children.   */
-//  A shared pointer decalred to an octomap object
+//  shared pointer to an octomap object, OcTree is a constructor
 std::shared_ptr<octomap::OcTree> octree_obj;
 
 /*  callback function when we subscribe to the '/octomap_full' topic
@@ -36,9 +36,11 @@ void octomapCallback(const octomap_msgs::Octomap& octomap_msg) {
     if(has_octomap)
         return;
 
-    // create Octomap, otherwise
+    /*  create Octomap, converting data from binary message to occupancy map,
+        which is casted as or converted to the OcTree data structure */
     octree_obj.reset(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
 
+    // set to true as we have a map now
     has_octomap = true;
 }
 
@@ -80,10 +82,10 @@ int main(int argc, char* argv[]) {
     param.setColor(mission.qn);
 
     // Submodules
-    std::shared_ptr<DynamicEDTOctomap> distmap_obj;
-    std::shared_ptr<InitTrajPlanner> initTrajPlanner_obj;
-    std::shared_ptr<Corridor> corridor_obj;
-    std::shared_ptr<MPCPlanner> MPCPlanner_obj;
+    std::shared_ptr<DynamicEDTOctomap> distmap_obj;         // Euclidean distance object
+    std::shared_ptr<InitTrajPlanner> initTrajPlanner_obj;   // discrete initial trajectory
+    std::shared_ptr<Corridor> corridor_obj;                 // safe-corridor construction
+    std::shared_ptr<MPCPlanner> MPCPlanner_obj;             // trajectory optimization
     std::shared_ptr<ResultPublisher> resultPublisher_obj;
 
     // Main Loop
@@ -152,6 +154,7 @@ int main(int argc, char* argv[]) {
             start_time = ros::Time::now().toSec();
             has_path = true;
         }
+        
         if(has_path) {
             // Publish Swarm Trajectory
             current_time = ros::Time::now().toSec() - start_time;

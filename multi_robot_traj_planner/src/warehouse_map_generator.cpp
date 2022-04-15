@@ -216,7 +216,7 @@ void pubSensedPoints()
 int main (int argc, char** argv) {
 
     // initialize the node
-    ros::init(argc, argv, "warehouse_map_generator");
+    ros::init(argc, argv, "random_map_generator");
     ros::NodeHandle n( "~" );
     ros::V_string args;
     ros::removeROSArgs(argc, argv, args);
@@ -269,14 +269,16 @@ int main (int argc, char** argv) {
         }
 
         // publishing the map points
-        if(count < 100) {
+        if(count < 1) {
             pubSensedPoints();
             count++;
         }
         // re-running once to incorporate more obstacles
-        else if (count == 100 and add_obs == 0) {
+        else if (count == 500 and add_obs == 0) {
             count = 0;
             add_obs = 1;
+        } else {
+            count++;
         }
         ros::spinOnce();
         rate.sleep();
