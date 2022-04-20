@@ -42,25 +42,25 @@ void obsCallback(const std_msgs::Bool& flag_msg) {
 // void trajCallback(const nav_msgs::Path& traj_msg, const std::string &topic) {
 void trajCallback(const ros::MessageEvent<nav_msgs::Path const>& event) {
 
+    // extracting topic name
     const ros::M_string& header = event.getConnectionHeader();
     std::string topic = header.at("topic");
 
+    // extracting pose data
     const nav_msgs::Path& traj_msg = *event.getMessage();
     geometry_msgs::PoseStamped pose_data = traj_msg.poses.back();
 
-    // std::cout << "Starting to print..." << endl;
-    // for(int k=0; k<traj_msg.poses.size(); k++) {
-    //     std::cout << "Agent: " << topic << endl;
-    //     std::cout << "Poses: " << k << '\t' << traj_msg.poses[k] << endl;
-    // }
-
+    // string manipulation for agent/robot number
     int len = topic.size();
     char last = topic.back();
     char sec_last = topic[len - 2];
     int n;
     if (isdigit(sec_last)) n = ((int)sec_last - 48)*10 + (int)last - 48;
     else n = (int)last - 48;
+
     // std::cout << "Pose : " << n << endl << pose_data << endl;
+    
+    // updating current positions
     current_x[n] = pose_data.pose.position.x;
     current_y[n] = pose_data.pose.position.y;
 }
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     ros::init (argc, argv, "swarm_traj_planner_rbp");
     ros::NodeHandle nh( "~" );
 
-    // define subscriber and topic for the Octomap
+    // define subscriber for added obstacle flag and the Octomap
     ros::Subscriber obs_added_sub = nh.subscribe( "/path_exists", 1, obsCallback );
     ros::Subscriber octomap_sub = nh.subscribe( "/octomap_full", 1, octomapCallback );
 
@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
     // the number of robots
     int qn = mission.qn;
     
+    // define subscriber for the desired trajectory pose data
     std::vector<ros::Subscriber> traj_sub;
     traj_sub.resize(qn);
     current_x.resize(qn);
@@ -212,37 +213,22 @@ int main(int argc, char* argv[]) {
                 resultPublisher_obj.get()->update(current_time);
                 resultPublisher_obj.get()->publish();
             }
-        } else if (has_octomap && has_path) {
+        }
+        else if (has_octomap && has_path) {
 
+            // reset flags
             has_octomap = false;
             has_path = false;
 
-            SwarmPlanning::Mission mission;
-            if(!mission.setMission_new(nh, current_x, current_y)){
-                return -1;
-            }     
-            // the number of robots
-            int qn = mission.qn;
+            // update mission parameters
+            mission.setMission_new(nh, current_x, current_y);
+            param.setROSParam(nh);
+            
+            // print current values to confirm
+            std::cout << "\nUpdated start positions: " << '\n';
+            for(int a= 0; a<qn; a++)
+                std::cout << a << " | x = " << mission.startState[a][0] << ", y = " << mission.startState[a][1] << '\n';
 
-            // Submodules
-            std::shared_ptr<DynamicEDTOctomap> distmap_obj;         // Euclidean distance object
-            std::shared_ptr<InitTrajPlanner> initTrajPlanner_obj;   // discrete initial trajectory
-            std::shared_ptr<Corridor> corridor_obj;                 // safe-corridor construction
-            std::shared_ptr<MPCPlanner> MPCPlanner_obj;             // trajectory optimization
-            std::shared_ptr<ResultPublisher> resultPublisher_obj;
-
-            SwarmPlanning::Param param;            
-            if(!param.setROSParam(nh)){
-                return -1;
-            }
-            param.setColor(mission.qn);
-
-            std::cout << "\nCurrent positions: " << '\n';
-            for(int n_agent= 0; n_agent<qn; n_agent++) {
-                // std::vector<double> state(current_x[n_agent], current_y[n_agent]);
-                std::cout << n_agent << " | x = " << current_x[n_agent] << ", y = " << current_y[n_agent] << '\n';
-                // mission.startState[n_agent] = state;
-            }            
         }
         ros::spinOnce();
         rate.sleep();
