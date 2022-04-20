@@ -501,6 +501,7 @@ public:
       }
     }
 
+    ROS_INFO_STREAM("Optimized Solution: Group_"<<group_num);
     return true;
   }
 

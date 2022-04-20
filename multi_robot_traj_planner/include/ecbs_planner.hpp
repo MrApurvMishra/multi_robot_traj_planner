@@ -115,7 +115,7 @@ private:
             xfg = (int)round((mission.goalState[i][0] - grid_x_min) / param.grid_xy_res);
             yfg = (int)round((mission.goalState[i][1] - grid_y_min) / param.grid_xy_res);
             zfg = (int)round((mission.goalState[i][2] - grid_z_min) / param.grid_z_res);
-
+            
             if(ecbs_obstacles.find(Location(xig * 5 , yig * 5 , zig)) != ecbs_obstacles.end()){
                 ROS_ERROR_STREAM("ECBSPlanner: start of agent " << i << " is occluded by obstacle");
                 return false;
