@@ -70,10 +70,9 @@ sensor_msgs::PointCloud2 globalMap_pcd;
 pcl::PointCloud<pcl::PointXYZ> cloudMap;
 
 // function to generate map
-void RandomMapGenerate(const SwarmPlanning::Mission& mission, bool obs_added) {
+void RandomMapGenerate(const SwarmPlanning::Mission& mission) {
 
     double numel_e = 0.00001;
-    cloudMap.points.clear();        // for storing collections of 3D points
     pcl::PointXYZ pt_random;        // 3D point to be stored in 'cloudMap'
 
     // creasting uniform distributions for map axes and obstacle's radius and height
@@ -82,16 +81,27 @@ void RandomMapGenerate(const SwarmPlanning::Mission& mission, bool obs_added) {
     rand_w = uniform_real_distribution<double>(r_min, r_max);
     rand_h = uniform_real_distribution<double>(h_min, h_max);
 
-    // obstacles
-    if (obs_added) {
+    // obstacles inside
+    int obs_iter = 0;
+    while(obs_iter < obs_num) {
         // defining obstacles positions
-        double x = 0.0, y = 0.0, w, h;
+        double x, y, w, h;
+        if (obs_iter%2==0)
+            x = -3.0;               // obstacles on left side
+        else
+            x = 3.0;                // obstacles on right side
+        if (obs_iter%3==0)
+            y = 0;                  // obstacles on y = 0
+        else if(obs_iter%3==1)
+            y = 2;                  // obstacles on upper part
+        else y = -2;                // obstacles on lower part
+
         x = floor(x/resolution) * resolution + resolution / 2.0;
         y = floor(y/resolution) * resolution + resolution / 2.0;
 
         // width and length of obstacles
-        int widNum = ceil(0.2/resolution);
-        int longNum = ceil(5.0/resolution);
+        int widNum = ceil(0.6/resolution);
+        int longNum = ceil(3.0/resolution);
 
         for(int r = -longNum/2.0; r < longNum/2.0; r++ ) {
             for (int s = -widNum/2.0; s < widNum/2.0; s++) {
@@ -105,110 +115,148 @@ void RandomMapGenerate(const SwarmPlanning::Mission& mission, bool obs_added) {
                 }
             }
         }
-    } else {
-        // obstacles inside
-        int obs_iter = 0;
-        while(obs_iter < obs_num) {
-            // defining obstacles positions
-            double x, y, w, h;
-            if (obs_iter%2==0)
-                x = -3.0;               // obstacles on left side
-            else
-                x = 3.0;                // obstacles on right side
-            if (obs_iter%3==0)
-                y = 0;                  // obstacles on y = 0
-            else if(obs_iter%3==1)
-                y = 2;                  // obstacles on upper part
-            else y = -2;                // obstacles on lower part
 
-            x = floor(x/resolution) * resolution + resolution / 2.0;
-            y = floor(y/resolution) * resolution + resolution / 2.0;
+        obs_iter++;
+    }
 
-            // width and length of obstacles
-            int widNum = ceil(0.6/resolution);
-            int longNum = ceil(3.0/resolution);
-
-            for(int r = -longNum/2.0; r < longNum/2.0; r++ ) {
-                for (int s = -widNum/2.0; s < widNum/2.0; s++) {
-                    h = rand_h(eng);
-                    int heiNum = ceil(h / resolution);
-                    for (int t = 0; t < heiNum; t++) {
-                        pt_random.x = x + (r + 0.5) * resolution + numel_e;
-                        pt_random.y = y + (s + 0.5) * resolution + numel_e;
-                        pt_random.z = (t + 0.5) * resolution + numel_e;
-                        cloudMap.points.push_back(pt_random);
-                    }
-                }
-            }
-
-            obs_iter++;
+    // boundary obstacles
+    obs_iter = 0;
+    while(obs_iter < obs_num) {
+        double x, y, w, hh,h;
+        if (obs_iter==0) {
+            x=-6;
+            y=0;
+            w=10;
+            hh=0.05;
+        }
+        else if (obs_iter==1) {
+            x=6;
+            y=0;
+            w=10;
+            hh=0.05;
+        }
+        else if (obs_iter==2) {
+            x=-3.5;
+            y=5;
+            w=0.05;
+            hh=5;
+        }
+        else if (obs_iter==3) {
+            x=3.5;
+            y=5;
+            w=0.05;
+            hh=5;
+        }
+        else if (obs_iter==4) {
+            x=-3.5;
+            y=-5;
+            w=0.05;
+            hh=5;
+        }
+        else if (obs_iter==5) {
+            x=3.5;
+            y=-5;
+            w=0.05;
+            hh=5;
         }
 
-        // boundary obstacles
-        obs_iter = 0;
-        while(obs_iter < obs_num) {
-            double x, y, w, hh,h;
-            if (obs_iter==0) {
-                x=-6;
-                y=0;
-                w=10;
-                hh=0.05;
-            }
-            else if (obs_iter==1) {
-                x=6;
-                y=0;
-                w=10;
-                hh=0.05;
-            }
-            else if (obs_iter==2) {
-                x=-3.5;
-                y=5;
-                w=0.05;
-                hh=5;
-            }
-            else if (obs_iter==3) {
-                x=3.5;
-                y=5;
-                w=0.05;
-                hh=5;
-            }
-            else if (obs_iter==4) {
-                x=-3.5;
-                y=-5;
-                w=0.05;
-                hh=5;
-            }
-            else if (obs_iter==5) {
-                x=3.5;
-                y=-5;
-                w=0.05;
-                hh=5;
-            }
+        x = floor(x/resolution) * resolution + resolution / 2.0;
+        y = floor(y/resolution) * resolution + resolution / 2.0;
 
-            x = floor(x/resolution) * resolution + resolution / 2.0;
-            y = floor(y/resolution) * resolution + resolution / 2.0;
+        int widNum = ceil(w/resolution);
+        int longNum = ceil(hh/resolution);
 
-            int widNum = ceil(w/resolution);
-            int longNum = ceil(hh/resolution);
+        for(int r = -longNum/2.0; r < longNum/2.0; r ++ ) {
+            for (int s = -widNum / 2.0; s < widNum / 2.0; s++) {
+                h = rand_h(eng);
+                int heiNum = ceil(0.2 / resolution);
+                for (int t = 0; t < heiNum; t++) {
 
-            for(int r = -longNum/2.0; r < longNum/2.0; r ++ ) {
-                for (int s = -widNum / 2.0; s < widNum / 2.0; s++) {
-                    h = rand_h(eng);
-                    int heiNum = ceil(0.2 / resolution);
-                    for (int t = 0; t < heiNum; t++) {
+                    // defifning each point
+                    pt_random.x = x + (r + 0.5) * resolution + numel_e;
+                    pt_random.y = y + (s + 0.5) * resolution + numel_e;
+                    pt_random.z = (t + 0.5) * resolution + numel_e;
 
-                        // defifning each point
-                        pt_random.x = x + (r + 0.5) * resolution + numel_e;
-                        pt_random.y = y + (s + 0.5) * resolution + numel_e;
-                        pt_random.z = (t + 0.5) * resolution + numel_e;
-
-                        // pushing to the point cloud
-                        cloudMap.points.push_back(pt_random);
-                    }
+                    // pushing to the point cloud
+                    cloudMap.points.push_back(pt_random);
                 }
             }
-            // increment for next obstacle
-            obs_iter++;
+        }
+        // increment for next obstacle
+        obs_iter++;
+    }
+
+    // updating dimension of point cloud in number of points
+    cloudMap.width = cloudMap.points.size();
+    cloudMap.height = 1;
+    cloudMap.is_dense = true;
+
+    ROS_WARN("Finished generating warehouse map.");
+
+    // pointer to input data to 'kdtreeLocalMap'
+    // which will be a shared pointer to deep copy of 'cloudMap'
+    kdtreeLocalMap.setInputCloud( cloudMap.makeShared() );
+}
+
+// function to generate map
+void AddObstacles(const SwarmPlanning::Mission& mission, int num_obstacles, double *obstacle_info[5])
+{
+
+    double numel_e = 0.00001;
+    pcl::PointXYZ pt_random;        // 3D point to be stored in 'cloudMap'
+
+    // creasting uniform distributions for map axes and obstacle's radius and height
+    rand_x = uniform_real_distribution<double>(x_min, x_max);
+    rand_y = uniform_real_distribution<double>(y_min, y_max);
+    rand_w = uniform_real_distribution<double>(r_min, r_max);
+    rand_h = uniform_real_distribution<double>(h_min, h_max);
+    
+    for (int i = 0; i < num_obstacles; i++) {
+
+        //get x and y coordinates of the center of the obstacle
+        double x_center = floor(obstacle_info[i][0]/resolution) * resolution + resolution / 2.0;
+        double y_center = floor(obstacle_info[i][1]/resolution) * resolution + resolution / 2.0;
+
+        //convert degrees to radians
+        double angle = obstacle_info[i][4] * M_PI / 180.0;
+
+        //define the rotation matrix
+        Eigen::Matrix3f rot_mat;
+        rot_mat << cos(angle), -sin(angle), x_center,
+                   sin(angle),  cos(angle), y_center,
+                   0,           0,          1;
+
+        //get the length and width of the obstacle
+        int longNum = ceil(obstacle_info[i][2] / resolution);
+        int widNum = ceil(obstacle_info[i][3] / resolution);
+
+
+        for(int r = -longNum/2.0; r < longNum/2.0; r++ ) {
+            for (int s = -widNum/2.0; s < widNum/2.0; s++) {
+                double h = rand_h(eng);
+                int heiNum = ceil(h / resolution);
+                for (int t = 0; t < heiNum; t++) {
+
+                    //get x and y coordinates in the obstacle frame
+                    double x_pp = (r + 0.5) * resolution + numel_e;
+                    double y_pp = (s + 0.5) * resolution + numel_e;
+
+                    //set right hand side of the equation
+                    Eigen::Vector3f rhs;
+                    rhs << x_pp, y_pp, 1.0;
+
+                    //get the obstacle coordinates in the origin frame
+                    Eigen::Vector3f origin_coords = rot_mat * rhs;
+
+                    double origin_x = origin_coords(0);
+                    double origin_y = origin_coords(1);
+
+                    pt_random.x = origin_x;
+                    pt_random.y = origin_y;
+                    pt_random.z = (t + 0.5) * resolution + numel_e;
+                    cloudMap.points.push_back(pt_random);
+                }
+            }
         }
     }
 
@@ -217,7 +265,7 @@ void RandomMapGenerate(const SwarmPlanning::Mission& mission, bool obs_added) {
     cloudMap.height = 1;
     cloudMap.is_dense = true;
 
-    ROS_WARN("Finished generate random map ");
+    ROS_WARN("Finished adding new obstacle.");
 
     // pointer to input data to 'kdtreeLocalMap'
     // which will be a shared pointer to deep copy of 'cloudMap'
@@ -241,7 +289,7 @@ int main (int argc, char** argv) {
     ros::V_string args;
     ros::removeROSArgs(argc, argv, args);
 
-    // create a publisher
+    // create a publisher for the Octomap server
     all_map_pub = n.advertise<sensor_msgs::PointCloud2>("/random_map_generator/all_map", 1);
     no_new_obs = n.advertise<std_msgs::Bool>("/path_exists", 1);
 
@@ -270,23 +318,39 @@ int main (int argc, char** argv) {
 
     // generate map msg
     // initializes the map
-    bool obs_flag = false;
-    RandomMapGenerate(mission, obs_flag);
+    RandomMapGenerate(mission);
 
     // publishing points
-    ros::Rate rate(10);         // frequency at which publishing is done
-    int count = 0;              // to publish only when needed
-    int add_obs = 0;            // to add obstacle once
-    obs_flag = true;              // new obstacle to be added
+    ros::Rate rate(10);             // frequency at which publishing is done
+    int count = 0;                  // to publish only when needed
+    int add_obs = 0;                // to add obstacle once
     no_new_obs.publish(true);
     while (ros::ok())
     {
         // to be ran once only
         // adds new obstacles        
         if (add_obs == 1) {
+
+            // number of obstacles
+            int num_obstacles = 5;
+
+            //1 = center_x
+            //2 = center_y
+            //3 = length
+            //4 = widgth
+            //5 = angle (degrees)
+            double obstacle_1[5] = {-0.5, -0.5, 1.0, 0.2, 5.0};
+            double obstacle_2[5] = {-3.5, 1.0, 0.3, 0.3, 30};
+            double obstacle_3[5] = {0.0, -1.0, 0.5, 0.5, 300};
+            double obstacle_4[5] = {4.0, -1.0, 0.5, 0.5, 30};
+            double obstacle_5[5] = {3.5, -1.0, 0.3, 0.3, 60};
+            double *obstacle_info[] = {obstacle_1, obstacle_2, obstacle_3, obstacle_4, obstacle_5};
+            
             // generate map msg
-            RandomMapGenerate(mission, obs_flag);
-            all_map_pub.publish(globalMap_pcd);
+            // initializes the map
+            AddObstacles(mission, num_obstacles, obstacle_info);            
+
+            // publish that new obstacles are added
             no_new_obs.publish(false);
             add_obs = 2;
         }
